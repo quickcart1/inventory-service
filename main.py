@@ -1,10 +1,25 @@
+import os
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from sqlmodel import Session, SQLModel, create_engine, select
 from typing import List
 from models import InventoryItem, InventoryItemCreate, InventoryItemUpdate
 
-DATABASE_URL = "sqlite:///./inventory.db"
+# Try to use PostgreSQL from env vars first, fallback to SQLite
+DATABASE_URL = os.getenv("DATABASE_URL")
+if not DATABASE_URL:
+    # Build PostgreSQL URL from Spring Boot style env vars if available
+    host = os.getenv("SPRING_DATASOURCE_URL", "").replace("jdbc:postgresql://", "").split("/")[0]
+    if host and ":" in host:
+        host, port = host.split(":")
+        db_name = os.getenv("SPRING_DATASOURCE_URL", "").split("/")[-1]
+        username = os.getenv("SPRING_DATASOURCE_USERNAME", "postgres")
+        password = os.getenv("SPRING_DATASOURCE_PASSWORD", "password")
+        DATABASE_URL = f"postgresql://{username}:{password}@{host}:{port}/{db_name}"
+    else:
+        # Fallback to SQLite for local development
+        DATABASE_URL = "sqlite:///./inventory.db"
+
 engine = create_engine(DATABASE_URL, echo=True)
 
 app = FastAPI(title="QuickKart Inventory Service", version="1.0.0")
