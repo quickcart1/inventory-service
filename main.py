@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlmodel import Session, SQLModel, create_engine, select
 from typing import List
 from models import InventoryItem, InventoryItemCreate, InventoryItemUpdate
+from prometheus_fastapi_instrumentator import Instrumentator
 
 # Try to use PostgreSQL from env vars first, fallback to SQLite
 DATABASE_URL = os.getenv("DATABASE_URL")
@@ -23,6 +24,8 @@ if not DATABASE_URL:
 engine = create_engine(DATABASE_URL, echo=True)
 
 app = FastAPI(title="QuickKart Inventory Service", version="1.0.0")
+
+Instrumentator().instrument(app).expose(app)
 
 app.add_middleware(
     CORSMiddleware,
